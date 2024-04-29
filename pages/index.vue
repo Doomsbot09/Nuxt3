@@ -7,7 +7,11 @@
         :btnOkName=eventStore.modalState.btnOkName
         :btnStatus=eventStore.modalState.btnStatus>
         <createTask v-if="eventStore.modalState.action === 'create' || eventStore.modalState.action === 'update'"></createTask>
-        <content v-if="eventStore.modalState.action === 'delete'" message="Are you sure you want to delete this task?"></content>
+        <deleteTask
+            :title=eventStore.deleteTask.task_name
+            :id=eventStore.deleteTask.id
+            v-if="eventStore.modalState.action === 'delete'" message="Are you sure you want to delete this task?">
+        </deleteTask>
     </modal>
 
     <div class="section_1">
@@ -16,32 +20,36 @@
 
     <div class="section_2">
         <customTable :table_header="store.table_headers">
-            <tr v-show="!store.task_data.length">
+            <tr v-if="store.pagination.isLoading">
                 <td class="filler" colspan="8">
                     <div class="filler-spinner">
                         <spinner size="35"></spinner>
                     </div>
                 </td>
             </tr>
-            <tr v-for="(item, index) in store.task_data" :key="index">
+            <tr
+                v-else
+                v-for="(item, index) in store.task_data" :key="index">
                 <td class="whitespace-no-wrap">{{ item.task_name }}</td>
                 <td class="whitespace-no-wrap">{{ item.description }}</td>
-                <td class="whitespace-no-wrap">{{ item.time_left }}</td>
-                <td class="whitespace-no-wrap">{{ item.start_date }}</td>
-                <td class="whitespace-no-wrap">{{ item.end_date }}</td>
-                <td class="whitespace-no-wrap">{{ item.created_at }}</td>
+                <td class="whitespace-no-wrap">{{ 
+                    getTimeLeft(item.starts_at, item.ends_at)
+                }}</td>
+                <td class="whitespace-no-wrap">{{ $dayjs(item.starts_at).format('MMM D, YYYY hh:mm A') }}</td>
+                <td class="whitespace-no-wrap">{{ $dayjs(item.ends_at).format('MMM D, YYYY hh:mm A') }}</td>
+                <td class="whitespace-no-wrap">{{ $dayjs(item.createdAt).format('MMM D, YYYY hh:mm A') }}</td>
                 <td class="whitespace-no-wrap">
                     <p :class="['badge ', 'badge-' + item.status]">{{ item.status }}</p>
                 </td>
                 <td colspan="1">
                     <div class="actions">
                         <Icon 
-                            @click="eventStore.toggleModal('delete')" 
+                            @click="eventStore.toggleModal('delete', { task_name: item.task_name, id: item.id })" 
                             class="actions-icon icon-danger"
                             name="trash_outline">
                         </Icon>
                         <Icon 
-                            @click="eventStore.toggleModal('update')"
+                            @click="eventStore.toggleModal('update', item)"
                             class="actions-icon icon-warning"
                             name="pencil_fill">
                         </Icon>
@@ -60,14 +68,48 @@
     const eventStore = useEventEmitter()
     const { $_, $dayjs } = useNuxtApp()
 
+    const getTimeLeft = (startDate: Date, endDate: Date) => {
+        const date1 = $dayjs(startDate)
+        const date2 = $dayjs(endDate)
+        const diffDays = Math.abs(date1.diff(date2, 'day'));
+        const diffHours = Math.abs(date1.diff(date2, 'hour') % 24);
+        const diffMinutes = Math.abs(date1.diff(date2, 'minute') % 60);
+        const timeLeft = `
+            ${diffDays > 1 ? diffDays + ' days' : diffDays === 1 ? diffDays + ' day' : ''}${diffDays && diffHours ? ',' : ''}
+            ${diffHours > 1 ? diffHours + ' hrs' : diffHours === 1 ? diffHours + ' hr' : ''}${(diffDays || diffHours) && diffMinutes ? ',' : ''}
+            ${diffMinutes > 1 ? diffMinutes + ' mins' : diffMinutes === 1 ? diffMinutes + ' min' : ''}`
+        
+        if(diffDays < 1 && diffHours < 1 && diffMinutes < 1) {
+            return `No Time Left`
+        }
+
+        return timeLeft
+    }
+
     onBeforeMount(async () => {
-        store.get('tasks')
+        const paginate = store.pagination
+        const query = {
+            page: paginate.page,
+            pageSize: paginate.pageSize,
+            returnCount: true,
+            notEqualFilters: [
+                {
+                    key: "status",
+                    value: "deleted"
+                }
+            ],
+            sorts: {
+                key: "createdAt",
+                value: "ASC"
+            }
+        }
+        store.list('task/list', query)
     })
 </script>
 
 <style lang="scss" scoped>
     .section_1 {
-        height: 25%;
+        height: 20vh;
         width: 100%;
         display: flex;
         flex-direction: column;
@@ -78,6 +120,7 @@
     .section_2 {
         height: auto;
         width: 100%;
+        margin-bottom: 1rem;
         box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
 
         .filler {
@@ -102,7 +145,7 @@
         }
 
         td {
-            padding: 0.50rem 1.25rem;
+            padding: 10px;
             font-weight: 400;
             background-color: #FFFFFF;
             border-bottom: 1px solid #dddddd;

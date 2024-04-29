@@ -6,22 +6,18 @@
             <Icon name="carret_down"></Icon>
         </button>
 
-        <!-- Dropdown Menu -->
         <div v-if="isOpen" class="origin-top-right absolute left-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none" role="menu" aria-orientation="vertical" aria-labelledby="menu-button" tabindex="-1">
-            <!-- Dropdown Items -->
-            <div class="py-1 list" role="none">
-                <a href="#" class="block px-4 py-2 text-sm text-gray-700" role="menuitem" tabindex="-1" id="menu-item-0">
-                    Task Name A - Z
-                </a>
-                <a href="#" class="block px-4 py-2 text-sm text-gray-700" role="menuitem" tabindex="-1" id="menu-item-1">
-                    Task Name Z - A
-                </a>
-                <a href="#" class="block px-4 py-2 text-sm text-gray-700" role="menuitem" tabindex="-1" id="menu-item-2">
-                    Date Created: ASC
-                </a>
-                <a href="#" class="block px-4 py-2 text-sm text-gray-700" role="menuitem" tabindex="-1" id="menu-item-3">
-                    Date Created: DESC
-                </a>
+            <div class="py-1">
+                <li v-for="(item, index) in items"
+                    @click="selectItem(item.flag)"
+                    :class="[
+                        'list block px-4 py-2 text-sm text-gray-700',
+                        {
+                            'isActive': item.flag === selected
+                        }
+                    ]">
+                    {{ item.name }}
+                </li>
             </div>
         </div>
     </div>
@@ -31,9 +27,21 @@
     import { ref } from 'vue'; 
 
     let isOpen = ref(false)
+    let selected = ref(3)
+    let items = [
+        { name: 'Task Name A - Z', flag: 1 },
+        { name: 'Task Name Z - A', flag: 2 },
+        { name: 'Date Created: ASC', flag: 3 },
+        { name: 'Date Created: DESC', flag: 4 }
+    ]
+    const emitSelect = defineEmits(['selectedItem'])
 
     const toggleDropDown = () => {
         isOpen.value = !isOpen.value
+    }
+    const selectItem = (data: number) => {
+        selected.value = data
+        emitSelect('selectedItem', data)
     }
 </script>
 
@@ -55,11 +63,14 @@
         }
     }
 
-    .list {
-
-        a:hover {
-            color: #1976D2;
-            background-color: lighten(#1976D2, 50%);
-        }
+    .list:hover {
+        color: #1976D2;
+        background-color: lighten(#1976D2, 50%);
+        cursor: pointer;
+    }
+    
+    .isActive {
+        color: #1976D2;
+        background-color: lighten(#1976D2, 50%);
     }
 </style>

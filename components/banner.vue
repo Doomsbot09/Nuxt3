@@ -4,7 +4,7 @@
             To-Do List
         </label>
         <div class="banner_actions">
-            <dropdown></dropdown>
+            <dropdown @selectedItem="sortBy"></dropdown>
             <button class="btn" @click="store.toggleModal('create')">
                 <Icon name="plus"></Icon>
                 Add Task
@@ -14,9 +14,55 @@
 </template>
 
 <script lang="ts" setup>
-    import { useEventEmitter } from '~/store/base';
+    import { useEventEmitter, useTodoStore } from '~/store/base';
 
     const store = useEventEmitter()
+    const todoStore = useTodoStore()
+    const sortBy = (data: number) => {
+        const query = {
+            key: "",
+            value: ""
+        }
+        switch (data) {
+            case 1:
+                query.key = "task_name"
+                query.value = "ASC"
+                break;
+            case 2:
+                query.key = "task_name"
+                query.value = "DESC"
+                break;
+            case 4:
+                query.key = "createdAt"
+                query.value = "DESC"
+                break;
+            default:
+                query.key = "createdAt"
+                query.value = "ASC"
+        }
+
+        paginate(query)
+    }
+
+    const paginate = (sort: object) => {
+        const paginate = todoStore.pagination
+        paginate.isLoading = true
+
+        const query = {
+                page: paginate.page,
+                pageSize: paginate.pageSize,
+                returnCount: true, 
+                notEqualFilters: [
+                    {
+                        key: "status",
+                        value: "deleted"
+                    }
+                ],
+                sorts: sort
+            }
+        
+        todoStore.list('task/list', query)
+    }
 </script>
 
 <style lang="scss" scoped>

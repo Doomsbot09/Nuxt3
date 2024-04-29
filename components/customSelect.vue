@@ -25,17 +25,20 @@
 </template>
   
 <script lang="ts" setup>
-    import { ref } from 'vue'; 
+    import { useTodoStore } from '~/store/base';
 
     let isOpen = ref(false)
     let selectedRowPage = ref(5) 
-    
+    const todoStore = useTodoStore()
+    const emitSelect = defineEmits(['selected'])
     const rowsPage = [5, 10, 15]
+
     const toggleDropDown = () => {
         isOpen.value = !isOpen.value
     }
     const selectRowPage = (item: number) => {
         selectedRowPage.value = item
+        emitSelect('selected', item)
     }
 </script>
 

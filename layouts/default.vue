@@ -98,7 +98,8 @@
         }
 
         .content {
-            height: 87vh;
+            height: auto;
+            min-height: 85vh;
             width: 100%;
             padding: 0 1.5rem;
             background-color: whitesmoke;

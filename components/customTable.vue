@@ -16,10 +16,40 @@
                     <td colspan="8">
                         <div class="footer">
                             <label>Rows per page:</label>
-                            <customSelect></customSelect>
-                            <label>1-5 of 10</label>
-                            <label><</label>
-                            <label>></label>
+                            <customSelect @selected="select"></customSelect>
+                            <label>
+                                {{ todoStore.pagination.page }}-{{ todoStore.pagination.pageSize }} 
+                                of 
+                                {{ todoStore.pagination.total }}
+                            </label>
+                            <label>
+                                <Icon  
+                                    @click="
+                                        !todoStore.pagination.isLoading && todoStore.pagination.page > 1 ? 
+                                        paginate('preview') : ''"
+                                    :class="[
+                                        'footer_actions',
+                                        {
+                                        'isActive': todoStore.pagination.page > 1
+                                        }
+                                    ]"
+                                    name="carret_back">
+                                </Icon>
+                            </label>
+                            <label>
+                                <Icon
+                                    @click="!todoStore.pagination.isLoading &&
+                                    todoStore.pagination.total > (todoStore.pagination.pageSize * todoStore.pagination.page) ? 
+                                    paginate('next') : ''"
+                                    :class="[
+                                        'footer_actions',
+                                        {
+                                            'isActive': todoStore.pagination.total > (todoStore.pagination.pageSize * todoStore.pagination.page)
+                                        }
+                                    ]"
+                                    name="carret_next">
+                                </Icon>
+                            </label>
                         </div>
                     </td>
                 </tr>
@@ -29,12 +59,44 @@
 </template>
 
 <script lang="ts" setup>
+    import { useTodoStore } from '~/store/base';
+
+    const todoStore = useTodoStore()
     const props = defineProps({
         table_header: {
             type: Object,
             required: true
         },
     })
+
+    const paginate = (action: string, size?: number) => {
+        const paginate = todoStore.pagination
+        paginate.isLoading = true
+        paginate.pageSize = action === 'size' && size ? size : paginate.pageSize
+        paginate.page = action === 'next' ? paginate.page + 1 : action === 'preview' ? paginate.page - 1 : paginate.page
+
+        const query = {
+                page: paginate.page,
+                pageSize: paginate.pageSize,
+                returnCount: true, 
+                notEqualFilters: [
+                    {
+                        key: "status",
+                        value: "deleted"
+                    }
+                ],
+                sorts: {
+                    key: "createdAt",
+                    value: "ASC"
+                }
+            }
+        
+        todoStore.list('task/list', query)
+    }
+
+    const select = (data: number) => {
+        paginate('size', data)
+    }
 </script>
 
 <style lang="scss" scoped>
@@ -51,5 +113,14 @@
         flex-direction: row;
         justify-content: flex-end;
         gap: 3rem;
+
+        &_actions {
+            color: #D1D5DB;
+            cursor: pointer;
+        }
+
+        .isActive {
+            color: #6B7280;
+        }
     }
 </style>

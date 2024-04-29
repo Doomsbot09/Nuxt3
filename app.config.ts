@@ -14,8 +14,8 @@ export default defineAppConfig({
             pencil_fill: 'ph:pencil-simple-line-duotone',
             carret_down: 'mingcute:down-line',
             carret_down_fill: 'mingcute:down-small-fill',
-            carret_next: 'ooui:next:ltr',
-            carret_back: 'ooui:next:rtl'
+            carret_next: 'mdi:chevron-right',
+            carret_back: 'mdi:chevron-left'
         }
     }
 })

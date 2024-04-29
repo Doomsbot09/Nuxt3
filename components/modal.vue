@@ -25,8 +25,16 @@
                     <u>{{ props.btnCancelName }}</u>
                 </button>
                 <button
+                    v-if="props.action === 'delete'"
                     @click="store.triggerEvent({ action: props.action })"
-                    :disabled="!store.formState.isValid && props.action === 'create'"
+                    :disabled="store.spinnerState.isLoading"
+                    class="modal-footer_btn btn-danger">
+                    {{ props.btnOkName }}
+                </button>
+                <button
+                    v-else
+                    @click="store.triggerEvent({ action: props.action })"
+                    :disabled="!store.formState.isValid && (props.action === 'create' || props.action === 'update')"
                     :class="['modal-footer_btn', 'btn-' + props.btnStatus]">
                     {{ props.btnOkName }}
                 </button>
@@ -146,7 +154,15 @@
 
             .btn-danger {
                 color: white;
-                background-color: #C10015;
+
+                &:not(:disabled) {
+                    background-color: #C10015;
+                }
+
+                &:disabled {
+                    cursor: not-allowed;
+                    background-color: lighten(#C10015, 20%);
+                }
             }
 
             .btn-cancel {

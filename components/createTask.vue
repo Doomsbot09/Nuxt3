@@ -48,11 +48,11 @@
                         <div class="datetime-container">
                             <input
                                 @blur="validate"
-                                v-model="formData.start_date"
+                                v-model="formData.starts_at"
                                 type="datetime-local"
                                 :class="[
                                     'datetime border border-gray-300 px-4 py-2 rounded-md focus:outline-none focus:border-blue-500',
-                                    { 'invalid': !formValidation.start_date.isValid && formValidation.start_date.isTouched }
+                                    { 'invalid': !formValidation.starts_at.isValid && formValidation.starts_at.isTouched }
                                 ]">
                             </input>
                         </div>
@@ -60,8 +60,8 @@
                     </div>
                     <span 
                         class="form-field_message"
-                        v-show="!formValidation.start_date.isValid && formValidation.start_date.isTouched">
-                        {{  formValidation.start_date.errMsg  }}
+                        v-show="!formValidation.starts_at.isValid && formValidation.starts_at.isTouched">
+                        {{  formValidation.starts_at.errMsg  }}
                     </span>
                 </div>
                 <div class="form-field">
@@ -70,11 +70,11 @@
                         <div class="datetime-container">
                             <input
                                 @blur="validate"
-                                v-model="formData.end_date" 
+                                v-model="formData.ends_at" 
                                 type="datetime-local"
                                 :class="[
                                     'datetime border border-gray-300 px-4 py-2 rounded-md focus:outline-none focus:border-blue-500',
-                                    { 'invalid': !formValidation.end_date.isValid && formValidation.end_date.isTouched }
+                                    { 'invalid': !formValidation.ends_at.isValid && formValidation.ends_at.isTouched }
                                 ]">
                             </input>
                         </div>
@@ -82,8 +82,8 @@
                     </div>
                     <span 
                         class="form-field_message"
-                        v-show="!formValidation.end_date.isValid && formValidation.end_date.isTouched">
-                        {{  formValidation.end_date.errMsg  }}
+                        v-show="!formValidation.ends_at.isValid && formValidation.ends_at.isTouched">
+                        {{  formValidation.ends_at.errMsg  }}
                     </span>
                 </div>
             </div>
@@ -92,14 +92,15 @@
 </template>
 
 <script lang="ts" setup>
-    import { useEventEmitter } from '~/store/base';
+    import { useEventEmitter, useTodoStore } from '~/store/base';
 
     const store = useEventEmitter()
-    const formData = reactive({
+    const todoStore = useTodoStore()
+    let formData = reactive({
         task_name: '',
         description: '',
-        start_date: '',
-        end_date: ''
+        starts_at: '',
+        ends_at: '',
     })
     const formValidation = ref({
         task_name: {
@@ -112,35 +113,73 @@
             isTouched: false,
             errMsg: ''
         },
-        start_date: {
+        starts_at: {
             isValid: false,
             isTouched: false,
             errMsg: ''
         },
-        end_date: {
+        ends_at: {
             isValid: false,
             isTouched: false,
             errMsg: ''
         },
     })
 
-    watch(store.data, (value) => {
-        if (value.action === 'create') {
-            submitForm()  
+    onBeforeMount(() => {
+        const action = store.modalState.action
+        
+        if (action === 'update') {
+            populateForm()
+            validate()
         }
     })
 
-    const submitForm = () => {
+    watch(store.event, (value) => {
+        if (value.action === 'create') {
+            submitForm()  
+        } else if (value.action === 'update') {
+            updateForm()
+        }
+    })
+
+    const submitForm = async () => {
         const isValid = validate()
         if (isValid) {
             store.spinnerState.isLoading = true
-            setTimeout(() => {
-                store.spinnerState.isLoading = false
+            store.formState.isValid = false
+
+            const resp = await todoStore.create('task/create', formData)
+
+            if (resp.status) {
                 store.toggleModal('close')
-                store.showToaster({ type: 'success', message: 'Successfully Created!' })
-            }, 3000);
-        } else {
-            store.spinnerState.isLoading = false
+                store.showToaster({ type: 'success', message: resp.message })
+                store.spinnerState.isLoading = false
+                todoStore.pagination.total = todoStore.pagination.total + 1
+            } else {
+                store.toggleModal('close')
+                store.showToaster({ type: 'error', message: resp.message })
+                store.spinnerState.isLoading = false
+            }
+        }
+    }
+
+    const updateForm = async () => {
+        const isValid = validate()
+        if (isValid) {
+            store.spinnerState.isLoading = true
+            store.formState.isValid = false
+
+            const resp = await todoStore.update(`task/update/${store.updateTask.id}`, formData)
+
+            if (resp.status) {
+                store.toggleModal('close')
+                store.showToaster({ type: 'success', message: resp.message })
+                store.spinnerState.isLoading = false
+            } else {
+                store.toggleModal('close')
+                store.showToaster({ type: 'error', message: resp.message })
+                store.spinnerState.isLoading = false
+            }
         }
     }
 
@@ -165,28 +204,35 @@
             formValidation.value.description['isValid'] = true
         }
 
-        if (!formData.start_date) {
-            formValidation.value.start_date['isValid'] = false
-            formValidation.value.start_date['isTouched'] = true
-            formValidation.value.start_date['errMsg'] = 'Start date is required!'
+        if (!formData.starts_at) {
+            formValidation.value.starts_at['isValid'] = false
+            formValidation.value.starts_at['isTouched'] = true
+            formValidation.value.starts_at['errMsg'] = 'Start date is required!'
             store.formState = { isValid: false, action: 'create' }
             return false
         } else {
-            formValidation.value.start_date['isValid'] = true
+            formValidation.value.starts_at['isValid'] = true
         }
 
-        if (!formData.end_date) {
-            formValidation.value.end_date['isValid'] = false
-            formValidation.value.end_date['isTouched'] = true
-            formValidation.value.end_date['errMsg'] = 'End date is required!'
+        if (!formData.ends_at) {
+            formValidation.value.ends_at['isValid'] = false
+            formValidation.value.ends_at['isTouched'] = true
+            formValidation.value.ends_at['errMsg'] = 'End date is required!'
             store.formState = { isValid: false, action: 'create' }
             return false
         } else {
-            formValidation.value.end_date['isValid'] = true
+            formValidation.value.ends_at['isValid'] = true
         }
 
         store.formState = { isValid: true, action: 'create' }
         return true
+    }
+
+    const populateForm = () => {
+        formData.task_name = store.updateTask.task_name
+        formData.description = store.updateTask.description
+        formData.starts_at = store.updateTask.starts_at
+        formData.ends_at = store.updateTask.ends_at
     }
 </script>
 
