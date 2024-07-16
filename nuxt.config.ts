@@ -2,12 +2,17 @@
 export default defineNuxtConfig({
   ssr: false,
   devtools: { enabled: false },
-  modules: ['@nuxtjs/tailwindcss', '@pinia/nuxt', 'nuxt-icon'],
+  modules: ['@nuxtjs/tailwindcss', '@pinia/nuxt', 'nuxt-icon', "nuxt-quasar-ui"],
   typescript: {
     strict: true,
     typeCheck: true 
   },
-  css: ['~/assets/css/tailwind.css'],
+  css: [
+    '~/assets/css/tailwind.css',
+    '~/assets/css/table.css',
+    'quasar/src/css/index.sass',
+    '@quasar/extras/material-icons/material-icons.css'
+  ],
   postcss: {
     plugins: {
       tailwindcss: {},
@@ -34,7 +39,9 @@ export default defineNuxtConfig({
           carret_down: 'mingcute:down-line',
           carret_down_fill: 'mingcute:down-small-fill',
           carret_next: 'mdi:chevron-right',
-          carret_back: 'mdi:chevron-left'
+          carret_back: 'mdi:chevron-left',
+          accordion_close: 'mdi:plus-box',
+          accordion_open: 'mdi:minus-box',
       }
     }
   }
